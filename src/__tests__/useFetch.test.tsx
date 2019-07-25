@@ -29,11 +29,16 @@ const ObjectDestructuringApp = (): ReactElement => {
 }
 
 const ArrayDestructuringApp = (): ReactElement => {
-  const [person, isLoading, anError] = useFetch<Person>('https://example.com', {
-    onMount: true,
-  })
+  const [, response, isLoading, anError] = useFetch<Person>(
+    'https://example.com',
+    {
+      onMount: true,
+    },
+  )
 
-  return <PersonView person={person} loading={isLoading} error={anError} />
+  return (
+    <PersonView person={response.data} loading={isLoading} error={anError} />
+  )
 }
 
 describe('useFetch - general', (): void => {
@@ -118,29 +123,44 @@ describe('useFetch - BROWSER - basic functionality', (): void => {
  * SSR Tests:
  */
 const NoURLOnMountTest = (): ReactElement => {
-  const [person, loading, error] = useFetch({ onMount: true })
+  const [, response, loading, error] = useFetch({ onMount: true })
   return (
-    <PersonView id="person-1" person={person} loading={loading} error={error} />
+    <PersonView
+      id="person-1"
+      person={response.data}
+      loading={loading}
+      error={error}
+    />
   )
 }
 
 const NoURLGetUseEffect = (): ReactElement => {
-  const [person, loading, error, request] = useFetch()
+  const [request, response, loading, error] = useFetch()
   useEffect((): void => {
     request.get()
   }, [request])
   return (
-    <PersonView id="person-2" person={person} loading={loading} error={error} />
+    <PersonView
+      id="person-2"
+      person={response.data}
+      loading={loading}
+      error={error}
+    />
   )
 }
 
 const NoURLGetUseEffectRelativeRoute = (): ReactElement => {
-  const [person, loading, error, request] = useFetch()
+  const [request, response, loading, error] = useFetch()
   useEffect((): void => {
     request.get('/people')
   }, [request])
   return (
-    <PersonView id="person-3" person={person} loading={loading} error={error} />
+    <PersonView
+      id="person-3"
+      person={response.data}
+      loading={loading}
+      error={error}
+    />
   )
 }
 

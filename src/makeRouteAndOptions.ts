@@ -1,6 +1,7 @@
 import { HTTPMethod } from './types'
 import { isObject, invariant, isBrowser, isString } from './utils'
 import { MutableRefObject } from 'react'
+const { GET, OPTIONS } = HTTPMethod
 
 interface RouteAndOptions {
   route: string
@@ -19,30 +20,32 @@ export default function makeRouteAndOptions(
     `If first argument of ${method.toLowerCase()}() is an object, you cannot have a 2nd argument. 😜`,
   )
   invariant(
-    !(method === HTTPMethod.GET && isObject(routeOrBody)),
+    !(method === GET && isObject(routeOrBody)),
     `You can only have query params as 1st argument of request.get()`,
   )
   invariant(
-    !(method === HTTPMethod.GET && bodyAs2ndParam !== undefined),
+    !(method === GET && bodyAs2ndParam !== undefined),
     `You can only have query params as 1st argument of request.get()`,
   )
 
   const route = ((): string => {
-    if (isBrowser && routeOrBody instanceof URLSearchParams)
+    if (isBrowser && routeOrBody instanceof URLSearchParams) {
       return `?${routeOrBody}`
+    }
     if (isString(routeOrBody)) return routeOrBody as string
     return ''
   })()
 
-  const body = ((): string => {
+  const body = ((): BodyInit => {
     if (isObject(routeOrBody)) return JSON.stringify(routeOrBody)
     if (isObject(bodyAs2ndParam)) return JSON.stringify(bodyAs2ndParam)
     if (
       isBrowser &&
       ((bodyAs2ndParam as any) instanceof FormData ||
         (bodyAs2ndParam as any) instanceof URLSearchParams)
-    )
-      return bodyAs2ndParam as string
+    ) {
+      return bodyAs2ndParam as BodyInit
+    }
     return JSON.stringify({})
   })()
 
@@ -67,7 +70,7 @@ export default function makeRouteAndOptions(
     ) {
       delete opts.headers['Content-Type']
     }
-    if (method === HTTPMethod.GET) delete opts.body
+    if (method === GET || method === OPTIONS) delete opts.body
     return opts
   })()
 

@@ -1,10 +1,5 @@
 import useFetch from '.'
-import {
-  HTTPMethod,
-  NoUrlOptions,
-  UseFetchBaseResult,
-  OptionsMaybeURL,
-} from './types'
+import { HTTPMethod, NoUrlOptions, ReqBase, OptionsMaybeURL } from './types'
 import useCustomOptions from './useCustomOptions'
 import useRequestInit from './useRequestInit'
 
@@ -14,7 +9,7 @@ type ArrayDestructure<TData = any> = [
   Error,
   (route?: string) => Promise<any>,
 ]
-interface ObjectDestructure<TData = any> extends UseFetchBaseResult<TData> {
+interface ObjectDestructure<TData = any> extends ReqBase<TData> {
   get: (route?: string) => Promise<any>
 }
 type UseGet = ArrayDestructure & ObjectDestructure

@@ -2,7 +2,7 @@ import useFetch from '.'
 import {
   HTTPMethod,
   NoUrlOptions,
-  UseFetchBaseResult,
+  ReqBase,
   OptionsMaybeURL,
   FetchData,
 } from './types'
@@ -15,7 +15,7 @@ type ArrayDestructure<TData = any> = [
   Error,
   (variables?: BodyInit | object) => Promise<any>,
 ]
-interface ObjectDestructure<TData = any> extends UseFetchBaseResult<TData> {
+interface ObjectDestructure<TData = any> extends ReqBase<TData> {
   delete: FetchData
   del: FetchData
 }
