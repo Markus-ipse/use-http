@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   HTTPMethod,
   OptionsMaybeURL,
@@ -14,6 +14,7 @@ import useCustomOptions from './useCustomOptions'
 import useRequestInit from './useRequestInit'
 import useSSR from 'use-ssr'
 import makeRouteAndOptions from './makeRouteAndOptions'
+import { checkInfiniteLoop } from './utils'
 
 // No <Provider url='example.com' />
 // function useFetch<TData = any>(url: string, options?: NoUrlOptions): UseFetch<TData>
@@ -29,6 +30,7 @@ function useFetch<TData = any>(
   urlOrOptions?: string | OptionsMaybeURL,
   optionsNoURLs?: NoUrlOptions,
 ): UseFetch<TData> {
+  checkInfiniteLoop()
   const { isBrowser, isServer } = useSSR()
   const { onMount, url } = useCustomOptions(urlOrOptions, optionsNoURLs)
   const requestInit = useRequestInit(urlOrOptions, optionsNoURLs)
@@ -58,7 +60,6 @@ function useFetch<TData = any>(
         try {
           setLoading(true)
           if (isServer) return // TODO: for now, we don't do anything on the server
-
           res.current = await fetch(`${url}${route}`, options)
           try {
             data.current = await res.current.json()
@@ -74,46 +75,28 @@ function useFetch<TData = any>(
         return data.current
       }
     },
-    [isBrowser, isServer, requestInit, url],
+    [/* isBrowser, isServer, requestInit, url */],
   )
 
-  const get = useCallback(makeFetch(HTTPMethod.GET), [])
-  const post = useCallback(makeFetch(HTTPMethod.POST), [])
-  const patch = useCallback(makeFetch(HTTPMethod.PATCH), [])
-  const put = useCallback(makeFetch(HTTPMethod.PUT), [])
-  const del = useCallback(makeFetch(HTTPMethod.DELETE), [])
-  const query = useCallback(
-    (query: string, variables?: BodyInit | object): Promise<any> =>
-      post({ query, variables }),
-    [post],
-  )
-  const mutate = useCallback(
-    (mutation: string, variables?: BodyInit | object): Promise<any> =>
-      post({ mutation, variables }),
-    [post],
-  )
+  const post = makeFetch(HTTPMethod.POST)
+  const del = makeFetch(HTTPMethod.DELETE)
 
-  const abort = useCallback((): void => {
-    controller.current && controller.current.abort()
-  }, [])
-
-  const request = useMemo(
-    (): Req<TData> => ({
-      get,
-      post,
-      patch,
-      put,
-      del,
-      delete: del,
-      abort,
-      query,
-      mutate,
-      loading,
-      error,
-      data: data.current,
-    }),
-    [get, post, patch, put, del, abort, query, mutate, loading, error],
-  )
+  const request: Req<TData> = {
+    get: makeFetch(HTTPMethod.GET),
+    post,
+    patch: makeFetch(HTTPMethod.PATCH),
+    put: makeFetch(HTTPMethod.PUT),
+    del,
+    delete: del,
+    abort(): void {
+      controller.current && controller.current.abort()
+    },
+    query: (query, variables) => post({ query, variables }),
+    mutate: (mutation, variables) => post({ mutation, variables }),
+    loading,
+    error,
+    data: data.current,
+  }
 
   const response = {
     data: data.current,
@@ -121,8 +104,11 @@ function useFetch<TData = any>(
   }
 
   // handling onMount
+  const mounted = useRef(false)
   useEffect((): void => {
-    if (!onMount) return
+    if (!onMount || mounted.current) return
+    mounted.current = true
+    console.log('CALLED')
     const methodName = requestInit.method || HTTPMethod.GET
     const methodLower = methodName.toLowerCase() as keyof ReqMethods
     if (methodName !== HTTPMethod.GET) {
@@ -132,18 +118,11 @@ function useFetch<TData = any>(
       const req = request[methodLower] as NoArgs
       req()
     }
-  }, [onMount, request, requestInit.body, requestInit.method])
+  }, [/*onMount, request, requestInit.body, requestInit.method*/])
 
   return Object.assign<UseFetchArrayReturn<TData>, UseFetchObjectReturn<TData>>(
     [request, response as Res<TData>, loading, error],
-    {
-      request,
-      response: response as Res<TData>,
-      data: data.current,
-      loading,
-      error,
-      ...request,
-    },
+    { request, response: response as Res<TData>, ...request },
   )
 }
 

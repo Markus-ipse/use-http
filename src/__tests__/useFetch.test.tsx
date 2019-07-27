@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useCallback, ReactElement } from 'react'
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  ReactElement,
+  useRef,
+} from 'react'
 import { useFetch, Provider } from '..'
 import ReactDOM from 'react-dom'
 import {
@@ -31,9 +37,7 @@ const ObjectDestructuringApp = (): ReactElement => {
 const ArrayDestructuringApp = (): ReactElement => {
   const [, response, isLoading, anError] = useFetch<Person>(
     'https://example.com',
-    {
-      onMount: true,
-    },
+    { onMount: true },
   )
 
   return (
@@ -135,10 +139,10 @@ const NoURLOnMountTest = (): ReactElement => {
 }
 
 const NoURLGetUseEffect = (): ReactElement => {
-  const [request, response, loading, error] = useFetch()
+  const [{ get }, response, loading, error] = useFetch()
   useEffect((): void => {
-    request.get()
-  }, [request])
+    get()
+  }, [get])
   return (
     <PersonView
       id="person-2"
@@ -150,10 +154,10 @@ const NoURLGetUseEffect = (): ReactElement => {
 }
 
 const NoURLGetUseEffectRelativeRoute = (): ReactElement => {
-  const [request, response, loading, error] = useFetch()
+  const [{ get }, response, loading, error] = useFetch()
   useEffect((): void => {
-    request.get('/people')
-  }, [request])
+    get('/people')
+  }, [get])
   return (
     <PersonView
       id="person-3"
@@ -239,10 +243,14 @@ const ManagedStateTest = (): ReactElement => {
     ])
   }, [get, setTodos])
 
+  const mounted = useRef(false)
   useEffect((): (() => void) => {
-    initializeTodos()
+    if (!mounted.current) {
+      initializeTodos()
+      mounted.current = true
+    }
     return abort
-  }, [initializeTodos, abort])
+  }, [abort, initializeTodos])
 
   const addTodo = useCallback(async (): Promise<void> => {
     const data = {

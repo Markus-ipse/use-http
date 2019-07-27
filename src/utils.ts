@@ -2,6 +2,28 @@ import { useMemo, useEffect } from 'react'
 import useSSR from 'use-ssr'
 import { RequestInitJSON, OptionsMaybeURL } from './types'
 
+let lastInput: any = null
+const calls: any[] = []
+export const checkInfiniteLoop = (input?: any) => {
+  const now = Date.now()
+  calls.push(now)
+  if (lastInput === input) {
+    if (calls.length > 1) {
+      if (calls[0] > now - 100) {
+        // console.error('Too many invocations in a short period. You probably forgot to memoize opts.')
+        throw Error('Too many invocations in a short period')
+        return true
+      }
+      calls.splice(0)
+    }
+  } else {
+    if (lastInput && calls.length) {
+      calls.splice(0)
+    }
+    lastInput = input
+  }
+}
+
 /**
  * Used for error checking. If the condition is false, throw an error
  */
