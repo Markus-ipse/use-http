@@ -72,15 +72,15 @@ function useFetch<TData = any>(
       }
     },
     [
-      /* url, isBrowser, requestInit, isServer */
+      url /*, isBrowser, requestInit, isServer */
     ],
   )
 
-  const get = useCallback(makeFetch(HTTPMethod.GET), [])
-  const post = useCallback(makeFetch(HTTPMethod.POST), [])
-  const patch = useCallback(makeFetch(HTTPMethod.PATCH), [])
-  const put = useCallback(makeFetch(HTTPMethod.PUT), [])
-  const del = useCallback(makeFetch(HTTPMethod.DELETE), [])
+  const get = useCallback(makeFetch(HTTPMethod.GET), [url])
+  const post = useCallback(makeFetch(HTTPMethod.POST), [url])
+  const patch = useCallback(makeFetch(HTTPMethod.PATCH), [url])
+  const put = useCallback(makeFetch(HTTPMethod.PUT), [url])
+  const del = useCallback(makeFetch(HTTPMethod.DELETE), [url])
   const query = useCallback(
     (query: string, variables?: BodyInit | object): Promise<any> =>
       post({ query, variables }),
@@ -124,7 +124,7 @@ function useFetch<TData = any>(
       req()
     }
   }, [
-    /*onMount, requestInit.body, requestInit.method, request, url*/
+    onMount, url /* requestInit.body, requestInit.method, request */
   ])
 
   return Object.assign<DestructuringCommands<TData>, UseFetchResult<TData>>(
